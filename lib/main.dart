@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
       title: 'Wearable Device App',
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue) //**change this color to anything**
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.redAccent) //**change this color to anything**
       ),
       debugShowCheckedModeBanner: false,
       home: WearableDeviceHomepage(),
@@ -33,7 +33,7 @@ class _WearableDeviceHomepageState extends State<WearableDeviceHomepage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Wearable Device for Sports Optimization and Injury Prevention'),
+        title: const Text('Wearable Device for Exercise Optimization and Injury Prevention'),
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
