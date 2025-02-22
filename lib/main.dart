@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
+import 'dart:async';
+import 'screens/bluetooth_off_screen.dart';
+import 'screens/scan_screen.dart';
+import 'screens/data_chart_screen.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -81,7 +86,10 @@ class BluetoothPage extends StatelessWidget {
           children: [
             ElevatedButton(
               onPressed: () {
-
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const FlutterBluePage()),
+                );
               },
               child: const Text('Click here to verify your Bluetooth Connection'),
             ),
@@ -101,6 +109,74 @@ class BluetoothPage extends StatelessWidget {
     );
   }
 } // Added new page class
+
+class FlutterBluePage extends StatefulWidget {
+  const FlutterBluePage({super.key});
+
+  @override
+  State<FlutterBluePage> createState() => _FlutterBluePageState();
+}
+
+class _FlutterBluePageState extends State<FlutterBluePage> {
+
+  BluetoothAdapterState _adapterState = BluetoothAdapterState.unknown;
+
+  late StreamSubscription<BluetoothAdapterState> _adapterStateStateSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _adapterStateStateSubscription = FlutterBluePlus.adapterState.listen((state) {
+      _adapterState = state;
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _adapterStateStateSubscription.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    Widget screen = _adapterState == BluetoothAdapterState.on
+        ? const ScanScreen()
+        : BluetoothOffScreen(adapterState: _adapterState);
+
+    return MaterialApp(
+      color: Colors.lightBlue,
+      home: screen,
+      navigatorObservers: [BluetoothAdapterStateObserver()],
+    );
+  }
+}
+
+class BluetoothAdapterStateObserver extends NavigatorObserver{
+  StreamSubscription<BluetoothAdapterState>? _adapterStateSubscription;
+
+  @override
+  void didPush(Route route, Route? previousRoute) {
+    super.didPush(route, previousRoute);
+    if (route.settings.name == '/DeviceScreen') {
+      _adapterStateSubscription ??= FlutterBluePlus.adapterState.listen((state) {  //listen to Bluetooth state changes
+        if (state != BluetoothAdapterState.on) {
+          navigator?.pop(); //exit if Bluetooth is off
+        }
+      });
+    }
+  }
+
+  @override
+  void didPop(Route route, Route? previousRoute) {
+    super.didPop(route, previousRoute);
+    _adapterStateSubscription?.cancel();
+    _adapterStateSubscription = null;
+  }
+
+}
 
 class ExerciseSelectionPage extends StatelessWidget {
   const ExerciseSelectionPage({super.key});
@@ -160,6 +236,16 @@ class BicepCurlPage extends StatelessWidget {
 
                 },
                 child: const Text('Start Exercise')
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const DataChartPage(title: "Real-Time Chart")),
+                  );
+                },
+                child: const Text("Data Chart")
             ),
           ],
         ),
