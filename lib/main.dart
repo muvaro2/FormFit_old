@@ -150,6 +150,7 @@ class _FlutterBluePageState extends State<FlutterBluePage> {
       color: Colors.lightBlue,
       home: screen,
       navigatorObservers: [BluetoothAdapterStateObserver()],
+      debugShowCheckedModeBanner: false,
     );
   }
 }
