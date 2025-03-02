@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import 'screens/bluetooth_off_screen.dart';
 import 'screens/scan_screen.dart';
@@ -18,9 +18,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Wearable Device App',
       theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.redAccent) //**change this color to anything**
-      ),
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.blue[900]!) //**change this color to anything**
+          ),
       debugShowCheckedModeBanner: false,
       home: WearableDeviceHomepage(),
     );
@@ -39,17 +40,23 @@ class _WearableDeviceHomepageState extends State<WearableDeviceHomepage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Wearable Device for Exercise Optimization and Injury Prevention'),
+        title: Text(
+          'FormFit',
+          style: GoogleFonts.audiowide(fontWeight: FontWeight.w800,fontSize: 40),
+        ),
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.primary,
+        toolbarHeight: 80,
       ),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min, // Keeps the content centered
           children: [
             const Text(
-              'Welcome to EOH Project Number _!', // we can change what text is displayed here later
-              style: TextStyle(fontSize: 30),
+              'Welcome to FormFit!', // we can change what text is displayed here later
+              style: TextStyle(
+                fontSize: 30,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20), // Space between text and button
@@ -57,7 +64,8 @@ class _WearableDeviceHomepageState extends State<WearableDeviceHomepage> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const BluetoothPage()),
+                  MaterialPageRoute(
+                      builder: (context) => const BluetoothPage()),
                 );
               },
               child: const Text('Get Started'),
@@ -76,29 +84,42 @@ class BluetoothPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Connect to the Device via Bluetooth'),
+        title: Text(
+          'FormFit',
+          style: GoogleFonts.audiowide(fontWeight: FontWeight.w800,fontSize: 40),
+        ),
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.primary,
+        toolbarHeight: 80,
       ),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const Text(
+              "Connect to the device via Bluetooth",
+              style: TextStyle(
+                fontSize: 30,
+              ),
+            ),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const FlutterBluePage()),
+                  MaterialPageRoute(
+                      builder: (context) => const FlutterBluePage()),
                 );
               },
-              child: const Text('Click here to verify your Bluetooth Connection'),
+              child: const Text('Verify your Bluetooth Connection'),
             ),
-            const SizedBox(height: 40), // Space between buttons
+            const SizedBox(height: 20), // Space between buttons
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ExerciseSelectionPage()),
+                  MaterialPageRoute(
+                      builder: (context) => const ExerciseSelectionPage()),
                 );
               },
               child: const Text('Continue'),
@@ -118,7 +139,6 @@ class FlutterBluePage extends StatefulWidget {
 }
 
 class _FlutterBluePageState extends State<FlutterBluePage> {
-
   BluetoothAdapterState _adapterState = BluetoothAdapterState.unknown;
 
   late StreamSubscription<BluetoothAdapterState> _adapterStateStateSubscription;
@@ -126,7 +146,8 @@ class _FlutterBluePageState extends State<FlutterBluePage> {
   @override
   void initState() {
     super.initState();
-    _adapterStateStateSubscription = FlutterBluePlus.adapterState.listen((state) {
+    _adapterStateStateSubscription =
+        FlutterBluePlus.adapterState.listen((state) {
       _adapterState = state;
       if (mounted) {
         setState(() {});
@@ -155,14 +176,16 @@ class _FlutterBluePageState extends State<FlutterBluePage> {
   }
 }
 
-class BluetoothAdapterStateObserver extends NavigatorObserver{
+class BluetoothAdapterStateObserver extends NavigatorObserver {
   StreamSubscription<BluetoothAdapterState>? _adapterStateSubscription;
 
   @override
   void didPush(Route route, Route? previousRoute) {
     super.didPush(route, previousRoute);
     if (route.settings.name == '/DeviceScreen') {
-      _adapterStateSubscription ??= FlutterBluePlus.adapterState.listen((state) {  //listen to Bluetooth state changes
+      _adapterStateSubscription ??=
+          FlutterBluePlus.adapterState.listen((state) {
+        //listen to Bluetooth state changes
         if (state != BluetoothAdapterState.on) {
           navigator?.pop(); //exit if Bluetooth is off
         }
@@ -176,7 +199,6 @@ class BluetoothAdapterStateObserver extends NavigatorObserver{
     _adapterStateSubscription?.cancel();
     _adapterStateSubscription = null;
   }
-
 }
 
 class ExerciseSelectionPage extends StatelessWidget {
@@ -186,19 +208,29 @@ class ExerciseSelectionPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Select an exercise'),
+        title: Text(
+          'FormFit',
+          style: GoogleFonts.audiowide(fontWeight: FontWeight.w800,fontSize: 40),
+        ),
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.primary,
+        toolbarHeight: 80,
       ),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const Text(
+              "Select an Exercise:",
+              style: TextStyle(fontSize: 30),
+            ),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const BicepCurlPage()),
+                  MaterialPageRoute(
+                      builder: (context) => const BicepCurlPage()),
                 );
               },
               child: const Text('Bicep Curl'),
@@ -217,37 +249,39 @@ class BicepCurlPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bicep Curl'),
+        title: Text(
+          'FormFit',
+          style: GoogleFonts.audiowide(fontWeight: FontWeight.w800,fontSize: 40),
+        ),
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.primary,
+        toolbarHeight: 80,
       ),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ElevatedButton(
-                onPressed: () {
-
-                },
-                child: const Text('Read Instructions')
+            const Text(
+              "Selected Exercise: Bicep Curl",
+              style: TextStyle(fontSize: 30),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-                onPressed: () {
-
-                },
-                child: const Text('Start Exercise')
-            ),
+                onPressed: () {}, child: const Text('Read Instructions')),
+            const SizedBox(height: 20),
+            ElevatedButton(
+                onPressed: () {}, child: const Text('Start Exercise')),
             const SizedBox(height: 20),
             ElevatedButton(
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const DataChartPage(title: "Real-Time Chart")),
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            const DataChartPage(title: "Real-Time Chart")),
                   );
                 },
-                child: const Text("Data Chart")
-            ),
+                child: const Text("Data Chart")),
           ],
         ),
       ),
