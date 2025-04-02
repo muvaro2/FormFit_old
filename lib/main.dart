@@ -123,12 +123,17 @@ class BottomNavBar extends StatelessWidget {
           children: [
             Divider(color: Color(0xFFAEADB2), height: 10.0, indent: 10, endIndent: 10),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 BottomNavItem(
                     icon: (Icons.home),
                     isActive: true,
-                    press: "Home"
+                    press: "Home",
+                ),
+                BottomNavItem(
+                  icon: (Icons.bar_chart),
+                  isActive: true,
+                  press: "ChartPage",
                 ),
                 BottomNavItem(
                   icon: Icons.bluetooth,
@@ -212,6 +217,151 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
+class ChartPage extends StatefulWidget {
+  const ChartPage({Key? key}) : super(key: key);
+
+  @override
+  _ChartPageState createState() => _ChartPageState();
+}
+
+class _ChartPageState extends State<ChartPage> {
+  List<ChartData> chartData = [];
+  int xValue = 0;
+  StreamSubscription? sensorSubscription;
+
+  bool isPlotting = true;
+  bool isRecording = false;
+  // Local list for recording during the session.
+  List<List<double>> currentRepetition = [];
+
+  @override
+  void initState() {
+    super.initState();
+    sensorSubscription = sensorDataController.stream.listen((data) {
+      // Append full sensor data (6 values) when recording.
+      if (isRecording) {
+        currentRepetition.add(List<double>.from(data));
+      }
+      // Plot accelerometer values (indices 3, 4, 5) if plotting is enabled.
+      if (isPlotting) {
+        setState(() {
+          chartData.add(ChartData(xValue, data[3], data[4], data[5]));
+          if (chartData.length > 50) {
+            chartData.removeAt(0);
+          }
+          xValue++;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    sensorSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Sensor Data Chart"),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Center(child: Text("Plotting")),
+          ),
+          Switch(
+            value: isPlotting,
+            onChanged: (value) {
+              setState(() {
+                isPlotting = value;
+                if (isPlotting) {
+                  sensorSubscription?.resume();
+                } else {
+                  sensorSubscription?.pause();
+                }
+              });
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Recording button placed in the body above the chart.
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      if (isRecording) {
+                        // When stopping recording, store current data into the global variable.
+                        globalRepetition = List<List<double>>.from(currentRepetition);
+                      } else {
+                        // When starting a new recording, clear the local repetition data.
+                        currentRepetition.clear();
+                      }
+                      isRecording = !isRecording;
+                    });
+                  },
+                  child: Text(isRecording ? "Stop Recording" : "Start Recording"),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (context) => RepetitionPage(),
+                    ));
+                  },
+                  child: Text("Analyze Repetition"),
+                ),
+              ),
+            ],
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SfCartesianChart(
+                primaryXAxis: NumericAxis(),
+                primaryYAxis: NumericAxis(),
+                legend: Legend(isVisible: true),
+                series: <ChartSeries>[
+                  LineSeries<ChartData, int>(
+                    name: 'Acc X',
+                    dataSource: chartData,
+                    xValueMapper: (ChartData data, _) => data.x,
+                    yValueMapper: (ChartData data, _) => data.accX,
+                    color: Colors.red,
+                  ),
+                  LineSeries<ChartData, int>(
+                    name: 'Acc Y',
+                    dataSource: chartData,
+                    xValueMapper: (ChartData data, _) => data.x,
+                    yValueMapper: (ChartData data, _) => data.accY,
+                    color: Colors.green,
+                  ),
+                  LineSeries<ChartData, int>(
+                    name: 'Acc Z',
+                    dataSource: chartData,
+                    xValueMapper: (ChartData data, _) => data.x,
+                    yValueMapper: (ChartData data, _) => data.accZ,
+                    color: Colors.blue,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class ScanPage extends StatefulWidget {
   const ScanPage({Key? key}) : super(key: key);
 
@@ -273,17 +423,66 @@ class _ScanPageState extends State<ScanPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Scan & Connect")),
-      body: ListView.builder(
-        itemCount: devicesList.length,
-        itemBuilder: (context, index) {
-          BluetoothDevice device = devicesList[index];
-          return ListTile(
-            title: Text(device.name),
-            subtitle: Text(device.id.toString()),
-            onTap: () => _connectToDevice(device),
-          );
-        },
+      appBar: AppBar(
+        title: Text(
+          "Scan & Connect",
+          style: TextStyle(
+            fontSize: 24
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [pColor.withOpacity(0.1), pColor.withOpacity(0.05)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: ListView.builder(
+          padding: EdgeInsets.all(16),
+          itemCount: devicesList.length,
+          itemBuilder: (context, index) {
+            BluetoothDevice device = devicesList[index];
+            return Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              margin: EdgeInsets.symmetric(vertical: 8),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: ListTile(
+                  contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  leading: Icon(Icons.bluetooth, color: pColor),
+                  title: Text(device.name, style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: bColor,
+                  )),
+                  subtitle: Text(device.id.toString(), style: TextStyle(
+                    color: Colors.grey[600],
+                  )),
+                  trailing: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: pColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text("Connect", style: TextStyle(
+                      color: pColor,
+                      fontWeight: FontWeight.bold,
+                    )),
+                  ),
+                  onTap: () => _connectToDevice(device),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -548,7 +747,7 @@ class BicepCurlPage extends StatelessWidget {
                           child: InkWell(
                               onTap: () {
                                 Navigator.push(context, MaterialPageRoute(
-                                    builder: (context) => RepetitionPage()
+                                    builder: (context) => ChartPage()
                                 ));
                               },
                               child: Container(
@@ -588,11 +787,7 @@ class _RepetitionPageState extends State<RepetitionPage> {
   bool showCalibration = false;
   List<double> repetitionError = List.filled(6, 0.0); // Indexes 0-2: Gyro XYZ, 3-5: Accel XYZ
   double accuracyScore = 0.0;
-  bool isRecording = false;
-  List<List<double>> currentRepetition = [];
 
-  // [CHANGE] Function to normalize and resample globalRepetition.
-  // Resamples the time series to 'targetLength' samples using linear interpolation.
   List<List<double>> normalizeAndResampleRepetition(List<List<double>> rep, int targetLength) {
     List<List<double>> newRep = [];
     int n = rep.length;
@@ -636,7 +831,6 @@ class _RepetitionPageState extends State<RepetitionPage> {
     return newRep;
   }
 
-  // [CHANGE] New function to trigger normalization & resampling.
   Future<void> _normalizeAndResample() async {
     // Choose target length based on experimental value (e.g., 40 samples).
     const int targetLength = 40;
@@ -716,26 +910,6 @@ class _RepetitionPageState extends State<RepetitionPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // NEW: Recording button at the top
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    if (isRecording) {
-                      // When stopping recording, store current data
-                      globalRepetition = List<List<double>>.from(currentRepetition);
-                    } else {
-                      // When starting new recording, clear local data
-                      currentRepetition.clear();
-                    }
-                    isRecording = !isRecording;
-                  });
-                },
-                child: Text(isRecording ? "Stop Recording" : "Start Recording"),
-              ),
-            ),
-            // Existing buttons below
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -924,9 +1098,9 @@ class BottomNavItem extends StatelessWidget {
           Navigator.push(context, MaterialPageRoute(
               builder: (context) => HomeScreen()
           ));
-        } else if (press == "Workouts") {
+        } else if (press == "ChartPage") {
           Navigator.push(context, MaterialPageRoute(
-              builder: (context) => WorkoutPage()
+              builder: (context) => ChartPage()
           ));
         } else {
           Navigator.push(context, MaterialPageRoute(
