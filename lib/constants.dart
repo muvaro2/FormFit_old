@@ -12,4 +12,4 @@ const Color bColor = Colors.black;
 const Color pColor = Color(0xFF0D47A1);
 const Color aColor = Color(0xFF557DD4);
 
-const workouts = ["Bicep curl", "Treadmill", "Weight Lifting", "Front Dumbbell Squat", "Rope Pulling", "Pull Ups", "Squat with Dumbbells", "Leg Lift with Weights", "", ""];
+const workouts = ["Bicep curl", "", "", "", "", "", "", "", "", ""];

@@ -111,14 +111,18 @@ class WelcomeScreen extends StatelessWidget {
 }
 
 class BottomNavBar extends StatelessWidget {
-  const BottomNavBar({super.key});
+  final String? curr;
+  const BottomNavBar({
+    Key? key,
+    this.curr,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         height: 80,
-        color: Color(0xFFD1E5F4),
+        color: Colors.white,
         child: Column(
           children: [
             Divider(color: Color(0xFFAEADB2), height: 10.0, indent: 10, endIndent: 10),
@@ -127,16 +131,17 @@ class BottomNavBar extends StatelessWidget {
               children: <Widget>[
                 BottomNavItem(
                     icon: (Icons.home),
-                    isActive: true,
+                    isActive: curr == "Home" ? true : false,
                     press: "Home",
                 ),
                 BottomNavItem(
                   icon: (Icons.bar_chart),
-                  isActive: true,
+                  isActive: curr == "Chart" ? true : false,
                   press: "ChartPage",
                 ),
                 BottomNavItem(
                   icon: Icons.bluetooth,
+                  isActive: curr == "Bluetooth" ? true : false,
                   press: "Bluetooth",
                 ),
               ],
@@ -155,8 +160,10 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
     return Scaffold(
-      backgroundColor: Color(0xFFD1E5F4),
-      bottomNavigationBar: BottomNavBar(),
+      backgroundColor: Colors.white,
+      bottomNavigationBar: BottomNavBar(
+        curr: "Home",
+      ),
       body: Stack(
         children: <Widget>[
           Container(
@@ -205,7 +212,6 @@ class HomeScreen extends StatelessWidget {
                           color: bColor.withOpacity(0.7),
                         )
                     ),
-                    SizedBox(height: 30),
                     WorkoutsSection(),
                   ],
                 ),
@@ -264,8 +270,12 @@ class _ChartPageState extends State<ChartPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: BottomNavBar(
+        curr: "Chart",
+      ),
       appBar: AppBar(
-        title: const Text("Sensor Data Chart"),
+        title: const Text("Sensor Data Chart", style: TextStyle(color: Colors.white)),
+        backgroundColor: pColor,
         actions: [
           Padding(
             padding: const EdgeInsets.all(8.0),
@@ -292,6 +302,7 @@ class _ChartPageState extends State<ChartPage> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              SizedBox(height: 120),
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: ElevatedButton(
@@ -423,6 +434,9 @@ class _ScanPageState extends State<ScanPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: BottomNavBar(
+        curr: "Bluetooth",
+      ),
       appBar: AppBar(
         title: Text(
           "Scan & Connect",
@@ -537,7 +551,7 @@ class WorkoutsSection extends StatelessWidget {
                             child: Image.asset(
                               "assets/images/workout${index + 1}.jpg",
                               height: 180,
-                              width: 180,
+                              width: 200,
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -567,42 +581,6 @@ class WorkoutsSection extends StatelessWidget {
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-class WorkoutPage extends StatelessWidget {
-  const WorkoutPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xFFD1E5F4),
-      bottomNavigationBar: BottomNavBar(),
-      body: Column(
-        children: [
-          Container(
-            child: Text(
-                "FormFit",
-                style: TextStyle(
-                  fontSize: 50,
-                  fontWeight: FontWeight.w900,
-                  color: pColor,
-                )
-            ),
-          ),
-          SizedBox(height: 30),
-          Container(
-            padding: EdgeInsets.all(40),
-            height: 100,
-            width: MediaQuery.of(context).size.width / 2,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(13),
-            ),
-          )
-        ],
       ),
     );
   }
@@ -906,45 +884,55 @@ class _RepetitionPageState extends State<RepetitionPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Repetition Data")),
+      appBar: AppBar(title: const Text("Repetition Data", style: TextStyle(color: Colors.white)), backgroundColor: pColor),
+      bottomNavigationBar: BottomNavBar(curr: "Chart"),
       body: SingleChildScrollView(
         child: Column(
           children: [
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: ElevatedButton(
-                    onPressed: _normalizeAndResample,
-                    child: const Text("Normalize & Resample"),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: ElevatedButton(
-                    onPressed: () => setState(() => showCalibration = !showCalibration),
-                    child: const Text("Show/Hide Calibration"),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: _calculateAccuracy,
-                        child: const Text("Calculate Accuracy"),
+                SizedBox(height: 20),
+                Row(
+                  children: [
+                    SizedBox(width: 330),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: ElevatedButton(
+                        onPressed: _normalizeAndResample,
+                        child: const Text("Normalize & Resample"),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Score: ${accuracyScore.toStringAsFixed(1)}%',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    ),
+                    SizedBox(width: 20),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: ElevatedButton(
+                        onPressed: () => setState(() => showCalibration = !showCalibration),
+                        child: const Text("Show/Hide Calibration"),
                       ),
-                    ],
+                    ),
+                    SizedBox(width: 20),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton(
+                            onPressed: _calculateAccuracy,
+                            child: const Text("Calculate Accuracy"),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 15),
+                Text(
+                  'Score: ${accuracyScore.toStringAsFixed(1)}%',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
