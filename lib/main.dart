@@ -225,30 +225,27 @@ class ChartPage extends StatefulWidget {
 }
 
 class _ChartPageState extends State<ChartPage> {
-  List<ChartData> chartData = [];
+  List<ChartData> accChartData = [];
+  List<ChartData> gyroChartData = [];
   int xValue = 0;
   StreamSubscription? sensorSubscription;
-
   bool isPlotting = true;
   bool isRecording = false;
-  // Local list for recording during the session.
   List<List<double>> currentRepetition = [];
 
   @override
   void initState() {
     super.initState();
     sensorSubscription = sensorDataController.stream.listen((data) {
-      // Append full sensor data (6 values) when recording.
       if (isRecording) {
         currentRepetition.add(List<double>.from(data));
       }
-      // Plot accelerometer values (indices 3, 4, 5) if plotting is enabled.
       if (isPlotting) {
         setState(() {
-          chartData.add(ChartData(xValue, data[3], data[4], data[5]));
-          if (chartData.length > 50) {
-            chartData.removeAt(0);
-          }
+          accChartData.add(ChartData(xValue, data[3], data[4], data[5]));
+          gyroChartData.add(ChartData(xValue, data[0], data[1], data[2]));
+          if (accChartData.length > 50) accChartData.removeAt(0);
+          if (gyroChartData.length > 50) gyroChartData.removeAt(0);
           xValue++;
         });
       }
@@ -288,7 +285,6 @@ class _ChartPageState extends State<ChartPage> {
       ),
       body: Column(
         children: [
-          // Recording button placed in the body above the chart.
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -298,10 +294,8 @@ class _ChartPageState extends State<ChartPage> {
                   onPressed: () {
                     setState(() {
                       if (isRecording) {
-                        // When stopping recording, store current data into the global variable.
                         globalRepetition = List<List<double>>.from(currentRepetition);
                       } else {
-                        // When starting a new recording, clear the local repetition data.
                         currentRepetition.clear();
                       }
                       isRecording = !isRecording;
@@ -314,9 +308,10 @@ class _ChartPageState extends State<ChartPage> {
                 padding: const EdgeInsets.all(8.0),
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(
-                      builder: (context) => RepetitionPage(),
-                    ));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => RepetitionPage()),
+                    );
                   },
                   child: Text("Analyze Repetition"),
                 ),
@@ -324,36 +319,87 @@ class _ChartPageState extends State<ChartPage> {
             ],
           ),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SfCartesianChart(
-                primaryXAxis: NumericAxis(),
-                primaryYAxis: NumericAxis(),
-                legend: Legend(isVisible: true),
-                series: <ChartSeries>[
-                  LineSeries<ChartData, int>(
-                    name: 'Acc X',
-                    dataSource: chartData,
-                    xValueMapper: (ChartData data, _) => data.x,
-                    yValueMapper: (ChartData data, _) => data.accX,
-                    color: Colors.red,
-                  ),
-                  LineSeries<ChartData, int>(
-                    name: 'Acc Y',
-                    dataSource: chartData,
-                    xValueMapper: (ChartData data, _) => data.x,
-                    yValueMapper: (ChartData data, _) => data.accY,
-                    color: Colors.green,
-                  ),
-                  LineSeries<ChartData, int>(
-                    name: 'Acc Z',
-                    dataSource: chartData,
-                    xValueMapper: (ChartData data, _) => data.x,
-                    yValueMapper: (ChartData data, _) => data.accZ,
-                    color: Colors.blue,
-                  ),
-                ],
-              ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Row(
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: AspectRatio(
+                          aspectRatio: 1,
+                          child: SfCartesianChart(
+                            title: ChartTitle(text: "Accelerometer Data"),
+                            primaryXAxis: NumericAxis(),
+                            primaryYAxis: NumericAxis(title: AxisTitle(text: "m/s²")),
+                            legend: Legend(isVisible: true),
+                            series: [
+                              LineSeries<ChartData, int>(
+                                name: 'Acc X',
+                                dataSource: accChartData,
+                                xValueMapper: (ChartData data, _) => data.x,
+                                yValueMapper: (ChartData data, _) => data.accX,
+                                color: Colors.red,
+                              ),
+                              LineSeries<ChartData, int>(
+                                name: 'Acc Y',
+                                dataSource: accChartData,
+                                xValueMapper: (ChartData data, _) => data.x,
+                                yValueMapper: (ChartData data, _) => data.accY,
+                                color: Colors.green,
+                              ),
+                              LineSeries<ChartData, int>(
+                                name: 'Acc Z',
+                                dataSource: accChartData,
+                                xValueMapper: (ChartData data, _) => data.x,
+                                yValueMapper: (ChartData data, _) => data.accZ,
+                                color: Colors.blue,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: AspectRatio(
+                          aspectRatio: 1,
+                          child: SfCartesianChart(
+                            title: ChartTitle(text: "Gyroscope Data"),
+                            primaryXAxis: NumericAxis(),
+                            primaryYAxis: NumericAxis(title: AxisTitle(text: "rad/s")),
+                            legend: Legend(isVisible: true),
+                            series: [
+                              LineSeries<ChartData, int>(
+                                name: 'Gyro X',
+                                dataSource: gyroChartData,
+                                xValueMapper: (ChartData data, _) => data.x,
+                                yValueMapper: (ChartData data, _) => data.accX,
+                                color: Colors.orange,
+                              ),
+                              LineSeries<ChartData, int>(
+                                name: 'Gyro Y',
+                                dataSource: gyroChartData,
+                                xValueMapper: (ChartData data, _) => data.x,
+                                yValueMapper: (ChartData data, _) => data.accY,
+                                color: Colors.purple,
+                              ),
+                              LineSeries<ChartData, int>(
+                                name: 'Gyro Z',
+                                dataSource: gyroChartData,
+                                xValueMapper: (ChartData data, _) => data.x,
+                                yValueMapper: (ChartData data, _) => data.accZ,
+                                color: Colors.teal,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -907,172 +953,173 @@ class _RepetitionPageState extends State<RepetitionPage> {
 
     return Scaffold(
       appBar: AppBar(title: const Text("Repetition Data")),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+      body: Column(
+        children: [
+          // Top controls and score display
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: ElevatedButton(
-                    onPressed: _normalizeAndResample,
-                    child: const Text("Normalize & Resample"),
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: _normalizeAndResample,
+                      child: const Text("Normalize & Resample"),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () => setState(() => showCalibration = !showCalibration),
+                      child: const Text("Show/Hide Calibration"),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: _calculateAccuracy,
+                      child: const Text("Calculate Accuracy"),
+                    ),
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: ElevatedButton(
-                    onPressed: () => setState(() => showCalibration = !showCalibration),
-                    child: const Text("Show/Hide Calibration"),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: _calculateAccuracy,
-                        child: const Text("Calculate Accuracy"),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Score: ${accuracyScore.toStringAsFixed(1)}%',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                const SizedBox(height: 8),
+                Text(
+                  'Score: ${accuracyScore.toStringAsFixed(1)}%',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SfCartesianChart(
-                title: ChartTitle(text: "Accelerometer Data"),
-                primaryXAxis: NumericAxis(),
-                primaryYAxis: NumericAxis(),
-                legend: Legend(isVisible: true),
-                series: <ChartSeries>[
-                  // Original repetition series
-                  LineSeries<ChartData, int>(
-                    name: 'Acc X',
-                    dataSource: accData,
-                    xValueMapper: (ChartData data, _) => data.x,
-                    yValueMapper: (ChartData data, _) => data.accX,
-                    color: Colors.red,
-                  ),
-                  LineSeries<ChartData, int>(
-                    name: 'Acc Y',
-                    dataSource: accData,
-                    xValueMapper: (ChartData data, _) => data.x,
-                    yValueMapper: (ChartData data, _) => data.accY,
-                    color: Colors.green,
-                  ),
-                  LineSeries<ChartData, int>(
-                    name: 'Acc Z',
-                    dataSource: accData,
-                    xValueMapper: (ChartData data, _) => data.x,
-                    yValueMapper: (ChartData data, _) => data.accZ,
-                    color: Colors.blue,
-                  ),
-                  // NEW: Calibration series
-                  if (showCalibration)
-                    LineSeries<ChartData, int>(
-                      name: 'Calib Acc X',
-                      dataSource: accCalibrationData,
-                      xValueMapper: (ChartData data, _) => data.x,
-                      yValueMapper: (ChartData data, _) => data.accX,
-                      color: Colors.red[800]!, // Darker red
-                      dashArray: [5,5], // Dashed line
+          ),
+          // Expanded area for charts taking up most of the screen
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: SfCartesianChart(
+                      title: ChartTitle(text: "Accelerometer Data"),
+                      primaryXAxis: NumericAxis(),
+                      primaryYAxis: NumericAxis(),
+                      legend: Legend(isVisible: true),
+                      series: <ChartSeries>[
+                        LineSeries<ChartData, int>(
+                          name: 'Acc X',
+                          dataSource: accData,
+                          xValueMapper: (ChartData data, _) => data.x,
+                          yValueMapper: (ChartData data, _) => data.accX,
+                          color: Colors.red,
+                        ),
+                        LineSeries<ChartData, int>(
+                          name: 'Acc Y',
+                          dataSource: accData,
+                          xValueMapper: (ChartData data, _) => data.x,
+                          yValueMapper: (ChartData data, _) => data.accY,
+                          color: Colors.green,
+                        ),
+                        LineSeries<ChartData, int>(
+                          name: 'Acc Z',
+                          dataSource: accData,
+                          xValueMapper: (ChartData data, _) => data.x,
+                          yValueMapper: (ChartData data, _) => data.accZ,
+                          color: Colors.blue,
+                        ),
+                        if (showCalibration)
+                          LineSeries<ChartData, int>(
+                            name: 'Calib Acc X',
+                            dataSource: accCalibrationData,
+                            xValueMapper: (ChartData data, _) => data.x,
+                            yValueMapper: (ChartData data, _) => data.accX,
+                            color: Colors.red[800]!,
+                            dashArray: [5, 5],
+                          ),
+                        if (showCalibration)
+                          LineSeries<ChartData, int>(
+                            name: 'Calib Acc Y',
+                            dataSource: accCalibrationData,
+                            xValueMapper: (ChartData data, _) => data.x,
+                            yValueMapper: (ChartData data, _) => data.accY,
+                            color: Colors.green[800]!,
+                            dashArray: [5, 5],
+                          ),
+                        if (showCalibration)
+                          LineSeries<ChartData, int>(
+                            name: 'Calib Acc Z',
+                            dataSource: accCalibrationData,
+                            xValueMapper: (ChartData data, _) => data.x,
+                            yValueMapper: (ChartData data, _) => data.accZ,
+                            color: Colors.blue[800]!,
+                            dashArray: [5, 5],
+                          ),
+                      ],
                     ),
-                  if (showCalibration)
-                    LineSeries<ChartData, int>(
-                      name: 'Calib Acc Y',
-                      dataSource: accCalibrationData,
-                      xValueMapper: (ChartData data, _) => data.x,
-                      yValueMapper: (ChartData data, _) => data.accY,
-                      color: Colors.green[800]!, // Darker green
-                      dashArray: [5,5],
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: SfCartesianChart(
+                      title: ChartTitle(text: "Gyroscope Data"),
+                      primaryXAxis: NumericAxis(),
+                      primaryYAxis: NumericAxis(),
+                      legend: Legend(isVisible: true),
+                      series: <ChartSeries>[
+                        LineSeries<ChartData, int>(
+                          name: 'Gyro X',
+                          dataSource: gyroData,
+                          xValueMapper: (ChartData data, _) => data.x,
+                          yValueMapper: (ChartData data, _) => data.accX,
+                          color: Colors.orange,
+                        ),
+                        LineSeries<ChartData, int>(
+                          name: 'Gyro Y',
+                          dataSource: gyroData,
+                          xValueMapper: (ChartData data, _) => data.x,
+                          yValueMapper: (ChartData data, _) => data.accY,
+                          color: Colors.purple,
+                        ),
+                        LineSeries<ChartData, int>(
+                          name: 'Gyro Z',
+                          dataSource: gyroData,
+                          xValueMapper: (ChartData data, _) => data.x,
+                          yValueMapper: (ChartData data, _) => data.accZ,
+                          color: Colors.teal,
+                        ),
+                        if (showCalibration)
+                          LineSeries<ChartData, int>(
+                            name: 'Calib Gyro X',
+                            dataSource: gyroCalibrationData,
+                            xValueMapper: (ChartData data, _) => data.x,
+                            yValueMapper: (ChartData data, _) => data.accX,
+                            color: Colors.orange[800]!,
+                            dashArray: [5, 5],
+                          ),
+                        if (showCalibration)
+                          LineSeries<ChartData, int>(
+                            name: 'Calib Gyro Y',
+                            dataSource: gyroCalibrationData,
+                            xValueMapper: (ChartData data, _) => data.x,
+                            yValueMapper: (ChartData data, _) => data.accY,
+                            color: Colors.purple[800]!,
+                            dashArray: [5, 5],
+                          ),
+                        if (showCalibration)
+                          LineSeries<ChartData, int>(
+                            name: 'Calib Gyro Z',
+                            dataSource: gyroCalibrationData,
+                            xValueMapper: (ChartData data, _) => data.x,
+                            yValueMapper: (ChartData data, _) => data.accZ,
+                            color: Colors.teal[800]!,
+                            dashArray: [5, 5],
+                          ),
+                      ],
                     ),
-                  if (showCalibration)
-                    LineSeries<ChartData, int>(
-                      name: 'Calib Acc Z',
-                      dataSource: accCalibrationData,
-                      xValueMapper: (ChartData data, _) => data.x,
-                      yValueMapper: (ChartData data, _) => data.accZ,
-                      color: Colors.blue[800]!, // Darker blue
-                      dashArray: [5,5],
-                    ),
-                ],
-              ),
+                  ),
+                ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SfCartesianChart(
-                title: ChartTitle(text: "Gyroscope Data"),
-                primaryXAxis: NumericAxis(),
-                primaryYAxis: NumericAxis(),
-                legend: Legend(isVisible: true),
-                series: <ChartSeries>[
-                  // Original gyro series
-                  LineSeries<ChartData, int>(
-                    name: 'Gyro X',
-                    dataSource: gyroData,
-                    xValueMapper: (ChartData data, _) => data.x,
-                    yValueMapper: (ChartData data, _) => data.accX,
-                    color: Colors.orange,
-                  ),
-                  LineSeries<ChartData, int>(
-                    name: 'Gyro Y',
-                    dataSource: gyroData,
-                    xValueMapper: (ChartData data, _) => data.x,
-                    yValueMapper: (ChartData data, _) => data.accY,
-                    color: Colors.purple,
-                  ),
-                  LineSeries<ChartData, int>(
-                    name: 'Gyro Z',
-                    dataSource: gyroData,
-                    xValueMapper: (ChartData data, _) => data.x,
-                    yValueMapper: (ChartData data, _) => data.accZ,
-                    color: Colors.teal,
-                  ),
-                  // NEW: Calibration gyro series
-                  if (showCalibration)
-                    LineSeries<ChartData, int>(
-                      name: 'Calib Gyro X',
-                      dataSource: gyroCalibrationData,
-                      xValueMapper: (ChartData data, _) => data.x,
-                      yValueMapper: (ChartData data, _) => data.accX,
-                      color: Colors.orange[800]!,
-                      dashArray: [5,5],
-                    ),
-                  if (showCalibration)
-                    LineSeries<ChartData, int>(
-                      name: 'Calib Gyro Y',
-                      dataSource: gyroCalibrationData,
-                      xValueMapper: (ChartData data, _) => data.x,
-                      yValueMapper: (ChartData data, _) => data.accY,
-                      color: Colors.purple[800]!,
-                      dashArray: [5,5],
-                    ),
-                  if (showCalibration)
-                    LineSeries<ChartData, int>(
-                      name: 'Calib Gyro Z',
-                      dataSource: gyroCalibrationData,
-                      xValueMapper: (ChartData data, _) => data.x,
-                      yValueMapper: (ChartData data, _) => data.accZ,
-                      color: Colors.teal[800]!,
-                      dashArray: [5,5],
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
